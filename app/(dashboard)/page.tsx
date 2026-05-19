@@ -7,6 +7,7 @@ import { CategoryChart } from '@/components/dashboard/ExpenseChart'
 import { TransactionList } from '@/components/transactions/TransactionList'
 import { TransactionForm } from '@/components/transactions/TransactionForm'
 import { TransactionFilters } from '@/components/transactions/TransactionFilters'
+import { ExportButton } from '@/components/transactions/ExportButton'
 import { Transaction, TransactionFilters as Filters, MonthlySummary } from '@/types'
 
 function getCurrentPeriod() {
@@ -73,7 +74,10 @@ export default function DashboardPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h2 className="text-lg font-semibold">Transações</h2>
-          <TransactionFilters filters={filters} onChange={setFilters} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <TransactionFilters filters={filters} onChange={setFilters} />
+            <ExportButton transactions={transactions} period={filters.period} />
+          </div>
         </div>
         {loading ? (
           <p className="text-sm text-muted-foreground">Carregando...</p>

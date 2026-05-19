@@ -31,6 +31,8 @@ const EXPENSE_MAP: Record<string, Category> = {
   // lazer
   cinema: 'lazer', netflix: 'lazer', spotify: 'lazer',
   viagem: 'lazer', bar: 'lazer', show: 'lazer',
+  revista: 'lazer', revistas: 'lazer', livros: 'lazer',
+  jogo: 'lazer', jogos: 'lazer', game: 'lazer',
   // outros
   sapateiro: 'outros', roupa: 'outros', sapato: 'outros',
   reparo: 'outros', conserto: 'outros', cabeleireiro: 'outros', barbearia: 'outros',
@@ -85,7 +87,8 @@ export function parseVoiceInput(text: string): ParsedTransaction[] {
   // "50 na feira, 20 no sapateiro e 30 na padaria"
   // Normalize "e {number}" to ", {number}" so we can split uniformly
   const normalized = text.replace(/\s+e\s+(?=\d)/gi, ', ')
-  const segments = normalized.match(/\d+(?:[.,]\d+)?[^,]*/g) ?? [text]
+  // [^,\d]* stops at both commas AND digits — handles speech without commas
+  const segments = normalized.match(/\d+(?:[.,]\d+)?[^,\d]*/g) ?? [text]
 
   return segments
     .map((s) => parseSegment(s.trim()))

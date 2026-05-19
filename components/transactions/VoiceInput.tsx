@@ -46,6 +46,8 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
     }
 
     accumulatedRef.current = ''
+    setTranscript('')
+    setInterimText('')
 
     const recognition = new SpeechRecognitionClass()
     recognition.lang = 'pt-BR'
@@ -63,7 +65,7 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
           interim = result[0].transcript
         }
       }
-      setInterimText(interim || accumulatedRef.current.trim())
+      setInterimText(accumulatedRef.current + interim)
     }
 
     recognition.onerror = () => {
@@ -74,8 +76,8 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
 
     recognition.onend = () => {
       setRecording(false)
-      setInterimText('')
       const final = accumulatedRef.current.trim()
+      setInterimText('')
       if (final) setTranscript(final)
       accumulatedRef.current = ''
     }
@@ -83,22 +85,23 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
     recognition.start()
     recognitionRef.current = recognition
     setRecording(true)
-    setTranscript('')
   }
 
   function stopRecording() {
     recognitionRef.current?.stop()
+  }
+
+  function handleClose() {
+    if (recording) recognitionRef.current?.stop()
     setRecording(false)
+    setTranscript('')
     setInterimText('')
+    setTransactions([])
+    accumulatedRef.current = ''
   }
 
   function removeTransaction(index: number) {
     setTransactions((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  function handleClose() {
-    setTranscript('')
-    setTransactions([])
   }
 
   async function handleSave() {
@@ -126,47 +129,51 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
     setSaving(false)
   }
 
+  const dialogOpen = recording || !!transcript
+
   return (
     <>
-      <div className="flex flex-col items-end gap-1">
-        <Button
-          variant={recording ? 'destructive' : 'outline'}
-          size="sm"
-          onClick={recording ? stopRecording : startRecording}
-          className={recording ? 'animate-pulse' : ''}
-        >
-          {recording
-            ? <MicOff className="h-4 w-4 mr-2" />
-            : <Mic className="h-4 w-4 mr-2" />}
-          {recording ? 'Parar' : 'Voz'}
-        </Button>
-        {(recording || interimText) && (
-          <p className="text-xs text-muted-foreground max-w-48 text-right truncate">
-            {interimText || 'ouvindo...'}
-          </p>
-        )}
-      </div>
+      <Button
+        variant={recording ? 'destructive' : 'outline'}
+        size="sm"
+        onClick={recording ? stopRecording : startRecording}
+        className={recording ? 'animate-pulse' : ''}
+      >
+        {recording
+          ? <MicOff className="h-4 w-4 mr-2" />
+          : <Mic className="h-4 w-4 mr-2" />}
+        {recording ? 'Parar' : 'Voz'}
+      </Button>
 
-      <Dialog open={!!transcript} onOpenChange={handleClose}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) handleClose() }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Confirmar transações</DialogTitle>
+            <DialogTitle className={recording ? 'flex items-center gap-2' : ''}>
+              {recording && <span className="inline-block h-2 w-2 rounded-full bg-rose-500 animate-pulse" />}
+              {recording ? 'Ouvindo...' : 'Confirmar transações'}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-1">
             <div className="space-y-1.5">
-              <p className="text-xs text-muted-foreground">O que você disse — edite se precisar:</p>
+              {!recording && (
+                <p className="text-xs text-muted-foreground">Edite se precisar:</p>
+              )}
               <textarea
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                 rows={2}
-                value={transcript}
-                onChange={(e) => setTranscript(e.target.value)}
+                placeholder={recording ? 'Fale agora...' : ''}
+                value={recording ? interimText : transcript}
+                readOnly={recording}
+                onChange={(e) => !recording && setTranscript(e.target.value)}
               />
             </div>
 
-            {transactions.length > 0 ? (
+            {!recording && transactions.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">{transactions.length} transação{transactions.length > 1 ? 'ões' : ''} detectada{transactions.length > 1 ? 's' : ''}:</p>
+                <p className="text-xs text-muted-foreground">
+                  {transactions.length} transação{transactions.length > 1 ? 'ões' : ''} detectada{transactions.length > 1 ? 's' : ''}:
+                </p>
                 {transactions.map((t, i) => (
                   <div key={i} className="flex items-start justify-between gap-3 p-3 rounded-lg border">
                     <div className="flex-1 min-w-0">
@@ -189,27 +196,36 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
                   </div>
                 ))}
               </div>
-            ) : (
+            )}
+
+            {!recording && transcript && transactions.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-2">
                 Nenhuma transação detectada. Tente editar o texto acima.
               </p>
             )}
           </div>
 
-          <div className="flex gap-2 pt-1">
-            <Button variant="outline" className="flex-1" onClick={handleClose}>
-              <X className="h-4 w-4 mr-1" />
-              Cancelar
+          {recording ? (
+            <Button variant="destructive" onClick={stopRecording}>
+              <MicOff className="h-4 w-4 mr-2" />
+              Parar gravação
             </Button>
-            <Button
-              className="flex-1"
-              onClick={handleSave}
-              disabled={saving || transactions.length === 0}
-            >
-              <Check className="h-4 w-4 mr-1" />
-              {saving ? 'Salvando...' : `Salvar ${transactions.length}`}
-            </Button>
-          </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleClose}>
+                <X className="h-4 w-4 mr-1" />
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSave}
+                disabled={saving || transactions.length === 0}
+              >
+                <Check className="h-4 w-4 mr-1" />
+                {saving ? 'Salvando...' : `Salvar ${transactions.length}`}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </>

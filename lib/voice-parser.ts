@@ -41,6 +41,7 @@ const EXPENSE_MAP: Record<string, Category> = {
 const INCOME_MAP: Record<string, Category> = {
   salario: 'salario',
   freelance: 'freelance', freela: 'freelance',
+  projeto: 'freelance', projetos: 'freelance', servico: 'freelance', servicos: 'freelance',
   dividendo: 'investimentos', rendimento: 'investimentos', juros: 'investimentos',
 }
 
@@ -56,7 +57,11 @@ function parseSegment(segment: string): ParsedTransaction | null {
   const amountMatch = segment.match(/(\d+(?:[.,]\d+)?)/)
   if (!amountMatch) return null
 
-  const amount = parseFloat(amountMatch[1].replace(',', '.'))
+  // Remove thousands separator (45.000 → 45000), then convert decimal comma
+  const amountStr = amountMatch[1]
+    .replace(/\.(\d{3})(?!\d)/g, '$1')
+    .replace(',', '.')
+  const amount = parseFloat(amountStr)
   if (isNaN(amount) || amount <= 0) return null
 
   const descRaw = segment.replace(amountMatch[0], '').trim()

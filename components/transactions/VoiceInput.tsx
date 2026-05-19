@@ -30,6 +30,7 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
   const [saving, setSaving] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null)
+  const accumulatedRef = useRef('')
 
   useEffect(() => {
     if (!transcript) return
@@ -44,27 +45,25 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
       return
     }
 
+    accumulatedRef.current = ''
+
     const recognition = new SpeechRecognitionClass()
     recognition.lang = 'pt-BR'
+    recognition.continuous = true
     recognition.interimResults = true
     recognition.maxAlternatives = 1
 
     recognition.onresult = (event: any) => {
       let interim = ''
-      let final = ''
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i]
         if (result.isFinal) {
-          final += result[0].transcript
+          accumulatedRef.current += result[0].transcript + ' '
         } else {
-          interim += result[0].transcript
+          interim = result[0].transcript
         }
       }
-      if (interim) setInterimText(interim)
-      if (final) {
-        setInterimText('')
-        setTranscript(final.trim())
-      }
+      setInterimText(interim || accumulatedRef.current.trim())
     }
 
     recognition.onerror = () => {
@@ -76,6 +75,9 @@ export function VoiceInput({ onSuccess }: VoiceInputProps) {
     recognition.onend = () => {
       setRecording(false)
       setInterimText('')
+      const final = accumulatedRef.current.trim()
+      if (final) setTranscript(final)
+      accumulatedRef.current = ''
     }
 
     recognition.start()

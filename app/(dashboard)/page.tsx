@@ -35,6 +35,7 @@ export default function DashboardPage() {
       .gte('date', startDate)
       .lte('date', endDate)
       .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (filters.type && filters.type !== 'all') query = query.eq('type', filters.type)
     if (filters.category && filters.category !== 'all') query = query.eq('category', filters.category)

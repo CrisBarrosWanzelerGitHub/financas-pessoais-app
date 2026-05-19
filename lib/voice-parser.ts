@@ -49,6 +49,56 @@ function normalize(text: string) {
   return text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 }
 
+const NUMBER_WORDS: Record<string, number> = {
+  um: 1, uma: 1,
+  dois: 2, duas: 2,
+  três: 3, tres: 3,
+  quatro: 4,
+  cinco: 5,
+  seis: 6,
+  sete: 7,
+  oito: 8,
+  nove: 9,
+  dez: 10,
+  onze: 11,
+  doze: 12,
+  treze: 13,
+  quatorze: 14, catorze: 14,
+  quinze: 15,
+  dezesseis: 16,
+  dezessete: 17,
+  dezoito: 18,
+  dezenove: 19,
+  vinte: 20,
+  trinta: 30,
+  quarenta: 40,
+  cinquenta: 50,
+  sessenta: 60,
+  setenta: 70,
+  oitenta: 80,
+  noventa: 90,
+  cem: 100, cento: 100,
+  duzentos: 200, duzentas: 200,
+  trezentos: 300, trezentas: 300,
+  quatrocentos: 400,
+  quinhentos: 500,
+  seiscentos: 600,
+  setecentos: 700,
+  oitocentos: 800,
+  novecentos: 900,
+  mil: 1000,
+}
+
+function expandNumberWords(text: string): string {
+  // Sort longest first so "quinhentos" matches before "cem" etc.
+  const sorted = Object.keys(NUMBER_WORDS).sort((a, b) => b.length - a.length)
+  let result = text
+  for (const word of sorted) {
+    result = result.replace(new RegExp(`\\b${word}\\b`, 'gi'), String(NUMBER_WORDS[word]))
+  }
+  return result
+}
+
 function today() {
   return new Date().toISOString().split('T')[0]
 }
@@ -109,7 +159,7 @@ function splitSegment(segment: string): string[] {
 }
 
 export function parseVoiceInput(text: string): ParsedTransaction[] {
-  return text
+  return expandNumberWords(text)
     .split(/,\s*|\s+e\s+/i)
     .map((s) => s.trim())
     .filter(Boolean)

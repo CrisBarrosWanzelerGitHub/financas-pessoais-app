@@ -5,54 +5,31 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  // Em produção sem credenciais, bloqueia tudo; em dev deixa passar para poder ver a UI
   if (!supabaseUrl?.startsWith('http') || !supabaseKey) {
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
     return NextResponse.next({ request })
   }
 
   let supabaseResponse = NextResponse.next({ request })
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+        supabaseResponse = NextResponse.next({ request })
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        )
+      },
+    },
+  })
 
-  let user = null
+  // Apenas renova a sessão — as verificações de auth ficam nos layouts
   try {
-    const { data } = await supabase.auth.getUser()
-    user = data.user
-  } catch {
-    // Se o Supabase falhar, deixa passar sem redirecionar
-    return supabaseResponse
-  }
-
-  const isAuthPage = request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/register')
-
-  if (!user && !isAuthPage) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  if (user && isAuthPage) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
+    await supabase.auth.getUser()
+  } catch {}
 
   return supabaseResponse
 }

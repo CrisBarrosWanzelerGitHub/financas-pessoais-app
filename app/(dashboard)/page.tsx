@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SummaryCards } from '@/components/dashboard/SummaryCards'
-import { ExpenseChart } from '@/components/dashboard/ExpenseChart'
+import { CategoryChart } from '@/components/dashboard/ExpenseChart'
 import { TransactionList } from '@/components/transactions/TransactionList'
 import { TransactionForm } from '@/components/transactions/TransactionForm'
 import { TransactionFilters } from '@/components/transactions/TransactionFilters'
@@ -61,7 +61,14 @@ export default function DashboardPage() {
 
       <SummaryCards summary={summary} />
 
-      <ExpenseChart transactions={transactions} />
+      <div className={`grid gap-4 ${filters.type && filters.type !== 'all' ? 'grid-cols-1 max-w-lg mx-auto w-full' : 'grid-cols-1 md:grid-cols-2'}`}>
+        {(!filters.type || filters.type === 'all' || filters.type === 'expense') && (
+          <CategoryChart transactions={transactions} type="expense" />
+        )}
+        {(!filters.type || filters.type === 'all' || filters.type === 'income') && (
+          <CategoryChart transactions={transactions} type="income" />
+        )}
+      </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">

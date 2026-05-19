@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -38,6 +37,17 @@ interface TransactionFormProps {
 export function TransactionForm({ onSuccess, transaction }: TransactionFormProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (transaction) return
+    function handleKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      if (e.key === 'n' || e.key === 'N') setOpen(true)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [transaction])
   const [type, setType] = useState<TransactionType>(transaction?.type || 'expense')
   const [amount, setAmount] = useState(transaction ? String(transaction.amount) : '')
   const [description, setDescription] = useState(transaction?.description || '')
@@ -50,23 +60,32 @@ export function TransactionForm({ onSuccess, transaction }: TransactionFormProps
     e.preventDefault()
     if (!category) return toast.error('Selecione uma categoria')
 
+    const parsedAmount = parseFloat(amount)
+    if (isNaN(parsedAmount) || parsedAmount <= 0) return toast.error('Valor inválido')
+    if (parsedAmount > 9_999_999) return toast.error('Valor muito alto')
+    if (description.trim().length < 2) return toast.error('Descrição muito curta')
+
     setLoading(true)
     const supabase = createClient()
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return toast.error('Sessão expirada, faça login novamente')
+
     const payload = {
       type,
-      amount: parseFloat(amount),
-      description,
+      amount: parsedAmount,
+      description: description.trim().slice(0, 200),
       category,
       date,
+      user_id: user.id,
     }
 
     const { error } = transaction
-      ? await supabase.from('transactions').update(payload).eq('id', transaction.id)
+      ? await supabase.from('transactions').update(payload).eq('id', transaction.id).eq('user_id', user.id)
       : await supabase.from('transactions').insert(payload)
 
     if (error) {
-      toast.error('Erro ao salvar transação')
+      toast.error('Não foi possível salvar a transação. Tente novamente.')
     } else {
       toast.success(transaction ? 'Transação atualizada!' : 'Transação adicionada!')
       setOpen(false)
@@ -77,17 +96,16 @@ export function TransactionForm({ onSuccess, transaction }: TransactionFormProps
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {transaction ? (
-          <Button variant="ghost" size="sm">Editar</Button>
-        ) : (
-          <Button size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            Nova transação
-          </Button>
-        )}
-      </DialogTrigger>
+    <>
+      {transaction ? (
+        <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>Editar</Button>
+      ) : (
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          Nova transação
+        </Button>
+      )}
+      <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{transaction ? 'Editar transação' : 'Nova transação'}</DialogTitle>
@@ -131,6 +149,7 @@ export function TransactionForm({ onSuccess, transaction }: TransactionFormProps
               placeholder="Ex: Almoço, Salário..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              maxLength={200}
               required
             />
           </div>
@@ -166,6 +185,7 @@ export function TransactionForm({ onSuccess, transaction }: TransactionFormProps
           </Button>
         </form>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+    </>
   )
 }

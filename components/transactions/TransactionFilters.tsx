@@ -5,13 +5,18 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select'
-import { CATEGORY_LABELS, Category, TransactionFilters } from '@/types'
+import { CATEGORY_LABELS, type Category, type TransactionFilters } from '@/types'
 
 interface Props {
   filters: TransactionFilters
   onChange: (filters: TransactionFilters) => void
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  all: 'Todos',
+  income: 'Receitas',
+  expense: 'Despesas',
 }
 
 function getMonthOptions() {
@@ -28,15 +33,22 @@ function getMonthOptions() {
 
 export function TransactionFilters({ filters, onChange }: Props) {
   const months = getMonthOptions()
+  const currentPeriod = filters.period || months[0].value
+  const currentType = filters.type || 'all'
+  const currentCategory = filters.category || 'all'
+
+  const periodLabel = months.find((m) => m.value === currentPeriod)?.label || 'Período'
+  const typeLabel = TYPE_LABELS[currentType]
+  const categoryLabel = currentCategory === 'all' ? 'Todas categorias' : CATEGORY_LABELS[currentCategory as Category]
 
   return (
     <div className="flex flex-wrap gap-3">
       <Select
-        value={filters.period || months[0].value}
+        value={currentPeriod}
         onValueChange={(v) => onChange({ ...filters, period: v })}
       >
         <SelectTrigger className="w-44">
-          <SelectValue placeholder="Período" />
+          <span className="flex-1 text-left text-sm">{periodLabel}</span>
         </SelectTrigger>
         <SelectContent>
           {months.map((m) => (
@@ -46,11 +58,11 @@ export function TransactionFilters({ filters, onChange }: Props) {
       </Select>
 
       <Select
-        value={filters.type || 'all'}
+        value={currentType}
         onValueChange={(v) => onChange({ ...filters, type: v as TransactionFilters['type'] })}
       >
         <SelectTrigger className="w-36">
-          <SelectValue placeholder="Tipo" />
+          <span className="flex-1 text-left text-sm">{typeLabel}</span>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todos</SelectItem>
@@ -60,11 +72,11 @@ export function TransactionFilters({ filters, onChange }: Props) {
       </Select>
 
       <Select
-        value={filters.category || 'all'}
+        value={currentCategory}
         onValueChange={(v) => onChange({ ...filters, category: v as Category | 'all' })}
       >
         <SelectTrigger className="w-44">
-          <SelectValue placeholder="Categoria" />
+          <span className="flex-1 text-left text-sm">{categoryLabel}</span>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">Todas categorias</SelectItem>

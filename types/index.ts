@@ -54,7 +54,7 @@ export interface Transaction {
 }
 
 export interface TransactionFilters {
-  period?: string
+  period?: string | null
   category?: Category | 'all'
   type?: TransactionType | 'all'
 }

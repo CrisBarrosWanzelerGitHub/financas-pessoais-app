@@ -74,6 +74,9 @@ export default function LoginPage() {
               Criar conta
             </Link>
           </p>
+          <p className="text-center text-xs text-muted-foreground/70 mt-3">
+            Ao criar uma conta, você receberá um e-mail de confirmação — verifique sua caixa de entrada antes de fazer login.
+          </p>
         </CardContent>
       </Card>
     </div>

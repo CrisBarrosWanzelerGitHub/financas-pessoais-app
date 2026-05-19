@@ -5,7 +5,7 @@ create table public.transactions (
   type text check (type in ('income', 'expense')) not null,
   amount numeric(10, 2) not null check (amount > 0),
   description text not null,
-  category text not null,
+  category text check (category in ('alimentacao','transporte','moradia','saude','educacao','lazer','salario','freelance','investimentos','outros')) not null,
   date date not null,
   created_at timestamptz default now() not null
 );

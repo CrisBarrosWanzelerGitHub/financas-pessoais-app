@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Download, Share2 } from 'lucide-react'
 import { Transaction, CATEGORY_LABELS } from '@/types'
@@ -30,14 +31,18 @@ function buildCsv(transactions: Transaction[]) {
 }
 
 export function ExportButton({ transactions, period }: ExportButtonProps) {
+  const [canShare, setCanShare] = useState(false)
   const filename = `transacoes${period ? `-${period}` : ''}.csv`
-  const canNativeShare = typeof navigator !== 'undefined' && 'share' in navigator && 'canShare' in navigator
+
+  useEffect(() => {
+    setCanShare('share' in navigator && 'canShare' in navigator)
+  }, [])
 
   async function handleExport() {
     const bom = '﻿'
     const csv = bom + buildCsv(transactions)
 
-    if (canNativeShare) {
+    if (canShare) {
       const file = new File([csv], filename, { type: 'text/csv;charset=utf-8;' })
       if (navigator.canShare({ files: [file] })) {
         try {
@@ -65,10 +70,10 @@ export function ExportButton({ transactions, period }: ExportButtonProps) {
       onClick={handleExport}
       disabled={transactions.length === 0}
     >
-      {canNativeShare
+      {canShare
         ? <Share2 className="h-4 w-4 mr-2" />
         : <Download className="h-4 w-4 mr-2" />}
-      {canNativeShare ? 'Compartilhar' : 'Exportar CSV'}
+      {canShare ? 'Compartilhar' : 'Exportar CSV'}
     </Button>
   )
 }

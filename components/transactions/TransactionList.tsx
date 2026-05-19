@@ -49,29 +49,31 @@ export function TransactionList({ transactions, onRefresh }: TransactionListProp
       {transactions.map((t) => (
         <Card key={t.id} className="hover:shadow-sm transition-shadow">
           <CardContent className="py-3 px-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm truncate">{t.description}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="secondary" className="text-xs">
+                <div className="flex items-center gap-2 mt-1.5">
+                  <Badge variant="secondary" className="text-xs shrink-0">
                     {CATEGORY_LABELS[t.category]}
                   </Badge>
                   <span className="text-xs text-muted-foreground">{formatDate(t.date)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
                 <span className={`font-semibold text-sm ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                 </span>
-                <TransactionForm transaction={t} onSuccess={onRefresh} />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-rose-600"
-                  onClick={() => handleDelete(t.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-0.5">
+                  <TransactionForm transaction={t} onSuccess={onRefresh} />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-rose-600"
+                    onClick={() => handleDelete(t.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>

@@ -64,7 +64,11 @@ function parseSegment(segment: string): ParsedTransaction | null {
   const amount = parseFloat(amountStr)
   if (isNaN(amount) || amount <= 0) return null
 
-  const descRaw = segment.replace(amountMatch[0], '').trim()
+  const descRaw = segment
+    .replace(amountMatch[0], '')
+    .replace(/\breais\b|\breal\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
   const description = descRaw
     .replace(/^(na|no|de|do|da|em|para|pelo|pela|num|numa|o|a|os|as)\s+/i, '')
     .trim()
@@ -89,13 +93,14 @@ function parseSegment(segment: string): ParsedTransaction | null {
 }
 
 export function parseVoiceInput(text: string): ParsedTransaction[] {
-  // "50 na feira, 20 no sapateiro e 30 na padaria"
-  // Normalize "e {number}" to ", {number}" so we can split uniformly
-  const normalized = text.replace(/\s+e\s+(?=\d)/gi, ', ')
-  // [^,\d]* stops at both commas AND digits — handles speech without commas
-  const segments = normalized.match(/\d+(?:[.,]\d+)?[^,\d]*/g) ?? [text]
+  // Split on commas or " e " conjunctions to handle both orderings:
+  // "400 supermercado", "supermercado 400", "supermercado 400 e farmácia 50"
+  const parts = text
+    .split(/,\s*|\s+e\s+/i)
+    .map((s) => s.trim())
+    .filter(Boolean)
 
-  return segments
-    .map((s) => parseSegment(s.trim()))
+  return parts
+    .map((s) => parseSegment(s))
     .filter((t): t is ParsedTransaction => t !== null)
 }

@@ -8,6 +8,7 @@ import { TransactionList } from '@/components/transactions/TransactionList'
 import { TransactionForm } from '@/components/transactions/TransactionForm'
 import { TransactionFilters } from '@/components/transactions/TransactionFilters'
 import { ExportButton } from '@/components/transactions/ExportButton'
+import { VoiceInput } from '@/components/transactions/VoiceInput'
 import { Transaction, TransactionFilters as Filters, MonthlySummary } from '@/types'
 
 function getCurrentPeriod() {
@@ -55,9 +56,12 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <TransactionForm onSuccess={fetchTransactions} />
+        <div className="flex items-center gap-2">
+          <VoiceInput onSuccess={fetchTransactions} />
+          <TransactionForm onSuccess={fetchTransactions} />
+        </div>
       </div>
 
       <SummaryCards summary={summary} />

@@ -43,6 +43,7 @@ const INCOME_MAP: Record<string, Category> = {
   freelance: 'freelance', freela: 'freelance',
   projeto: 'freelance', projetos: 'freelance', servico: 'freelance', servicos: 'freelance',
   dividendo: 'investimentos', rendimento: 'investimentos', juros: 'investimentos',
+  venda: 'outros', vendas: 'outros', vendi: 'outros',
 }
 
 function normalize(text: string) {
@@ -117,19 +118,33 @@ function parseSegment(segment: string): ParsedTransaction | null {
   const descRaw = segment
     .replace(amountMatch[0], '')
     .replace(/\breais\b|\breal\b/gi, '')
+    .replace(/\b(paguei|gastei|transferi|mandei|enviei|pago|gasto)\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim()
   const description = descRaw
     .replace(/^(na|no|de|do|da|em|para|pelo|pela|num|numa|o|a|os|as)\s+/i, '')
+    .replace(/\bpara\b\s*/gi, '')
+    .replace(/\s+/g, ' ')
     .trim()
 
   if (!description) return null
 
   const norm = normalize(description)
+  const segNorm = normalize(segment)
+  const hasPara = /\bpara\b/.test(segNorm)
+  // "venda/vendi/vendas" sempre é receita, mesmo que "para" apareça
+  const hasVenda = /\bvend[aios]\b/.test(segNorm)
 
-  for (const [keyword, category] of Object.entries(INCOME_MAP)) {
-    if (norm.includes(normalize(keyword))) {
-      return { type: 'income', amount, description, category, date: today() }
+  if (hasVenda) {
+    return { type: 'income', amount, description, category: 'outros', date: today() }
+  }
+
+  // "para" sinaliza que é pagamento a alguém → despesa (pula checagem de receita)
+  if (!hasPara) {
+    for (const [keyword, category] of Object.entries(INCOME_MAP)) {
+      if (norm.includes(normalize(keyword))) {
+        return { type: 'income', amount, description, category, date: today() }
+      }
     }
   }
 

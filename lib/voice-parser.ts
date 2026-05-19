@@ -92,15 +92,28 @@ function parseSegment(segment: string): ParsedTransaction | null {
   return { type: 'expense', amount, description, category: 'outros', date: today() }
 }
 
+function splitSegment(segment: string): string[] {
+  const numbers = segment.match(/\d+(?:[.,]\d+)?/g) ?? []
+  if (numbers.length <= 1) return [segment]
+
+  // Segment starts with text: "Feira 90 sapateiro 50 mercado 1000"
+  // Split into description-first chunks: each word group + its number
+  if (/^[a-zA-ZÀ-úÇç]/.test(segment)) {
+    const parts = segment.match(/[a-zA-ZÀ-úÇç][^0-9,]*\d+(?:[.,]\d+)?/g)
+    if (parts && parts.length > 1) return parts
+  }
+
+  // Segment starts with a number: "90 na feira 50 no sapateiro"
+  // Fall back to number-first splitting
+  return segment.match(/\d+(?:[.,]\d+)?[^,\d]*/g) ?? [segment]
+}
+
 export function parseVoiceInput(text: string): ParsedTransaction[] {
-  // Split on commas or " e " conjunctions to handle both orderings:
-  // "400 supermercado", "supermercado 400", "supermercado 400 e farmácia 50"
-  const parts = text
+  return text
     .split(/,\s*|\s+e\s+/i)
     .map((s) => s.trim())
     .filter(Boolean)
-
-  return parts
+    .flatMap(splitSegment)
     .map((s) => parseSegment(s))
     .filter((t): t is ParsedTransaction => t !== null)
 }

@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil } from 'lucide-react'
 import {
   Transaction,
   TransactionType,
@@ -98,7 +98,9 @@ export function TransactionForm({ onSuccess, transaction }: TransactionFormProps
   return (
     <>
       {transaction ? (
-        <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>Editar</Button>
+        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setOpen(true)}>
+          <Pencil className="h-4 w-4" />
+        </Button>
       ) : (
         <Button size="sm" onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4 mr-1" />

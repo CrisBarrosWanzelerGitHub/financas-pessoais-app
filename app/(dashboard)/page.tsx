@@ -71,14 +71,12 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="text-lg font-semibold">Transações</h2>
-          <div className="flex items-center gap-2 flex-wrap">
-            <TransactionFilters filters={filters} onChange={setFilters} />
-            <ExportButton transactions={transactions} period={filters.period} />
-          </div>
+          <ExportButton transactions={transactions} period={filters.period} />
         </div>
+        <TransactionFilters filters={filters} onChange={setFilters} />
         {loading ? (
           <p className="text-sm text-muted-foreground">Carregando...</p>
         ) : (
